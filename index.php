@@ -97,6 +97,16 @@ if (isset($_SESSION['sessionAccessToken'])) {
                 });
             }
 
+            this.refreshToken = function() {
+               $.ajax({
+                   type: "POST",
+                   url: "refreshToken.php",
+               }).done(function( msg ) {
+
+               });
+           }
+
+
             this.AddCustomer = function() {
                 /*
                 AJAX Request to Add Customer
@@ -109,10 +119,55 @@ if (isset($_SESSION['sessionAccessToken'])) {
                 });
             }
 
-            this.refreshToken = function() {
+            this.showBusinessAnalystResult() = function() {
                 $.ajax({
                     type: "POST",
-                    url: "refreshToken.php",
+                    url: "BusinessAnalytic.php",
+                }).done(function( msg ) {
+
+                });
+            }
+
+            this.workOnInvoiceAndBilling() = function() {
+                $.ajax({
+                    type: "POST",
+                    url: "InvoiceAndBilling.php",
+                }).done(function( msg ) {
+
+                });
+            }
+
+            this.manageInventory() = function() {
+                $.ajax({
+                    type: "POST",
+                    url: "ManagingInventory.php",
+                }).done(function( msg ) {
+
+                });
+            }
+
+            this.landingJob() = function() {
+                $.ajax({
+                    type: "POST",
+                    url: "LandingTheJob.php",
+                }).done(function( msg ) {
+
+                });
+            }
+
+            this.accounting() = function() {
+                $.ajax({
+                    type: "POST",
+                    url: "Accounting.php",
+                }).done(function( msg ) {
+
+                });
+            }
+
+            this.payBill() = function() {
+                $.ajax({
+                    type: "POST",
+                    url: "PayBill.php",
                 }).done(function( msg ) {
 
                 });
@@ -158,7 +213,13 @@ if (isset($_SESSION['sessionAccessToken'])) {
     <p>If there is no access token or the access token is invalid, click either the <b>Connect to QucikBooks</b> or <b>Sign with Intuit</b> button above.</p>
     <pre id="apiCall"></pre>
     <button  type="button" class="btn btn-success" onclick="apiCall.getCompanyInfo()">Get Company Info</button>
-    <button  type="button" class="btn btn-success" onclick="apiCall.AddCustomer()">Add a customer</button>
+    <button  type="button" class="btn btn-success" onclick="apiCall.showBusinessAnalystResult()">Show Business Analytics Result</button>
+    <button  type="button" class="btn btn-success" onclick="apiCall.workOnInvoiceAndBilling()">Invoice and Billing</button>
+    <button  type="button" class="btn btn-success" onclick="apiCall.manageInventory()">Managing Inventory</button>
+    <button  type="button" class="btn btn-success" onclick="apiCall.landingJob()">Landing the Job</button>
+    <button  type="button" class="btn btn-success" onclick="apiCall.accounting()">Accounting</button>
+    <button  type="button" class="btn btn-success" onclick="apiCall.payBill()">Pay Bill</button>
+
 
     <hr />
 
