@@ -193,7 +193,7 @@ if (isset($_SESSION['sessionAccessToken'])) {
 
     <div class="well text-center">
 
-        <h1>Intuit OAuth2.0 & OpenID Connect Demo in PHP</h1>
+        <h1>Intuit Hackson in PHP</h1>
 
         <br>
 
