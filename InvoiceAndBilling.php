@@ -8,7 +8,7 @@ use QuickBooksOnline\API\Facades\Customer;
 use QuickBooksOnline\API\Facades\Item;
 use QuickBooksOnline\API\Facades\Invoice;
 use QuickBooksOnline\API\Facades\Payment;
-use QuickBooksOnline\API\Facades\XmlObjectSerializerTest;
+use QuickBooksOnline\API\Facades\Account;
 
 session_start();
 
@@ -68,7 +68,7 @@ function invoiceAndBilling()
             "FreeFormNumber"=>  "(555) 555-5555"
         ],
         "PrimaryEmailAddr"=>  [
-            "Address" => "krishnamurti_subramanian@intuit.com"
+            "Address" => "author@intuit.com"
         ]
     ]);
     $resultingCustomerObj = $dataService->Add($customerObj); 
@@ -78,6 +78,31 @@ function invoiceAndBilling()
     print_r($result . "\n\n\n");
 
 //  2. Add an item
+//  First, let us make sure these acounts exist: Income, Expense, Asset
+    $incomeAccountObj = Account::create([
+        "AccountType" => "Income",
+        "AccountSubType" => "SalesOfProductIncome",
+        "Name" => "Office supplies" . rand(0,1000) 
+    ]);
+    $resultingIncomeAccountObj = $dataService->Add($incomeAccountObj);      
+    $incomeAccountId = $resultingIncomeAccountObj->Id;
+
+    $expenseAccountObj = Account::create([
+        "AccountType" => "CostOfGoodsSold",
+        "AccountSubType" => "SuppliesMaterialsCogs",
+        "Name" => "Cost of Goods sold " . rand(0,1000) 
+    ]);
+    $resultingExpenseAccountObj = $dataService->Add($expenseAccountObj);      
+    $expenseAccountId = $resultingExpenseAccountObj->Id;
+
+    $assetAccountObj = Account::create([
+        "AccountType" => "Other Current Asset",
+        "AccountSubType" => "Inventory",
+        "Name" => "Inventory asset " . rand(0,1000) 
+    ]);
+    $resultingAssetAccountObj = $dataService->Add($assetAccountObj);      
+    $assetAccountId = $resultingAssetAccountObj->Id;
+
     $dateTime = new \DateTime('NOW');
     $ItemObj = Item::create([
         "Name" => "Office Supplies3" . rand(0, 10000),
@@ -88,19 +113,16 @@ function invoiceAndBilling()
         "UnitPrice" => 25,
         "Type" => "Inventory",
         "IncomeAccountRef"=> [
-            "value"=> 79,
-            "name" => "Landscaping Services:Job Materials:Fountains and Garden Lighting"
-        ],
+            "value"=>  $incomeAccountId
+       ],
         "PurchaseDesc"=> "This is the purchasing description.",
         "PurchaseCost"=> 35,
         "ExpenseAccountRef"=> [
-            "value"=> 80,
-            "name"=> "Cost of Goods Sold"
+            "value"=> $expenseAccountId
         ],
         "AssetAccountRef"=> [
-            "value"=> 81,
-            "name"=> "Inventory Asset"
-        ],
+            "value"=> $assetAccountId
+         ],
         "TrackQtyOnHand" => true,
         "QtyOnHand"=> 100,
         "InvStartDate"=> $dateTime
@@ -119,16 +141,15 @@ function invoiceAndBilling()
                 "SalesItemLineDetail" => [
                         "Qty" => 2,
                         "ItemRef" => [
-                            "value" => $itemId,
-                            "name" => "Hours"
-                        ]
+                            "value" => $itemId
+                         ]
                 ]
         ],
         "CustomerRef"=> [
             "value"=> $customerId
         ],
         "BillEmail" => [
-            "Address" => "krishnamurti_subramanian@intuit.com"
+            "Address" => "author@intuit.com"
         ]
      ]);
     $resultingInvoiceObj = $dataService->Add($invoiceObj);
