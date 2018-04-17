@@ -5,7 +5,7 @@ use QuickBooksOnline\API\DataService\DataService;
 
 session_start();
 
-function makeAPICall()
+function getCompanyInfo()
 {
 
     // Create SDK instance
@@ -34,6 +34,6 @@ function makeAPICall()
     return $companyInfo;
 }
 
-$result = makeAPICall();
+$result = getCompanyInfo();
 
 ?>
