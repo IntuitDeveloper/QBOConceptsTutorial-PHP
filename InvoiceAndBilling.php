@@ -140,12 +140,12 @@ function invoiceAndBilling()
 
 //  4. send a mail
     $resultingMailObj = $dataService->sendEmail($resultingInvoiceObj, 
-                                                $resultingInvoiceObj -> $BillEmail -> $Address);
+                                                $resultingInvoiceObj->BillEmail->Address);
     echo "Sent mail. Reconstructed response body below:\n";
     $result = json_encode($resultingMailObj, JSON_PRETTY_PRINT);
     print_r($result . "\n\n\n");
 
-//  5.  Receive payments for the invoce created above
+//  5.  Receive payments for the invoice created above
     $paymentObj = Payment::create([
         "CustomerRef" => [
             "value" => $customerId
