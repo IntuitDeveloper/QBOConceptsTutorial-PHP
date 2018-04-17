@@ -26,7 +26,6 @@ function accounting()
     ));
 
      // Retrieve the accessToken value from session variable
-    $dataService->setLogLocation("/Users/mshah6/QBOConceptsTutorial-PHP/logs");
     $accessToken = $_SESSION['sessionAccessToken'];
     $dataService->throwExceptionOnError(true);
 
