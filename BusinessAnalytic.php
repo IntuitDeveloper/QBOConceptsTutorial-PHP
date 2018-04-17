@@ -42,8 +42,6 @@ function analyzeBusiness()
      */
     $dataService->updateOAuth2Token($accessToken);
 
-    $dataService->setLogLocation("/Users/psridhar1/repositories/QBOConceptsTutorial-PHP/Logs");
-
     /*
      * Initialize the Report service from the data service context
      */
