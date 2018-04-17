@@ -3,7 +3,6 @@
 require_once(__DIR__ . '/vendor/autoload.php');
 use QuickBooksOnline\API\DataService\DataService;
 use QuickBooksOnline\API\Facades\Customer;
-use QuickBooksOnline\API\Core\Http\Serialization\XmlObjectSerializer;
 
 
 session_start();
@@ -49,7 +48,7 @@ function customerAdd()
       "Suffix" => "Jr",
       "FullyQualifiedName" => "JamesCRUD KingCRUD",
       "CompanyName" => "King Groceries CRUD",
-      "DisplayName" => "JamesCfdRdUDesf KingCRUD",
+      "DisplayName" => "JamesCfdRdUDesf KingCRUDm Fes",
       "PrimaryPhone" => [
           "FreeFormNumber" => "(555) 555-5555"
       ],

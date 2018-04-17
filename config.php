@@ -2,9 +2,9 @@
 return array(
     'authorizationRequestUrl' => 'https://appcenter.intuit.com/connect/oauth2',
     'tokenEndPointUrl' => 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer',
-    'client_id' => 'Q0fXL014zAv3wzmlhwXMEHTrKepfAshCRjztEu58ZokzCD5T7D',
-    'client_secret' => 'stfnZfuSZUDay6cJSWtvQ9HkWiKFbcI9YuBTET5P',
-    'oauth_scope' => 'com.intuit.quickbooks.accounting com.intuit.quickbooks.payment openid profile email phone address',
-    'oauth_redirect_uri' => 'http://localhost:3000/callback.php',
+    'client_id' => 'Q0nnJqqKMBQ6TjCe7uFDQQxzr4D5xw9BB17LtwTE4rQzVxPJWv',
+    'client_secret' => 'eFOg66TfP61xfjAeo8wKGZQ70wyilPLoQDVbtYcM',
+    'oauth_scope' => 'com.intuit.quickbooks.accounting',
+    'oauth_redirect_uri' => 'http://localhost:8080/callback.php',
 )
 ?>
