@@ -38,7 +38,7 @@ function manageInventory()
      */
     $dataService->updateOAuth2Token($accessToken);
 
-    //Start write your business logic here, and store the final result to $result object
+    //Start write your business logic here
     $dataService->throwExceptionOnError(true);
 
     // Create Inventory Item with initial quantity on hand of 10
