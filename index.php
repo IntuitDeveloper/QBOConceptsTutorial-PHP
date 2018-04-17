@@ -91,7 +91,7 @@ if (isset($_SESSION['sessionAccessToken'])) {
                  */
                 $.ajax({
                     type: "GET",
-                    url: "apiCall.php",
+                    url: "getCompanyInfo.php",
                 }).done(function( msg ) {
                     $( '#apiCall' ).html( msg );
                 });
