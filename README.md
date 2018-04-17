@@ -1,4 +1,4 @@
-Intuit OAuth2.0 and OpenID Connect Demo in PHP
+Hackathon PHP
 ==========================================================
 
 ## Overview
