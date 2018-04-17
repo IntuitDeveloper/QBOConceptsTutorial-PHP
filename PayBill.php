@@ -1,4 +1,15 @@
 <?php
+/**
+ * <README:>
+ * Here is a quick tutorial to create a vendor, bill for a vendor, a billPayment for a bill and a vendorCredit for a vendor.
+* 0. create necessay dependency entities: an expense account (for creating bill), a bank account (for creating billPayment) and a customer account (for creating vendorCredit)
+* 1. Add a new vendor 
+* 2. Add a new bill item and set the value of vendorRef to be the Id of the vendor created in 1
+* 3. Create a billPayment  for the bill created in 2. We need to set value of vendorRef to be the Id of the vendor created in 1 and Line.LinkedTxn.TxnId to be the Id of the bill created in 2
+* 4. Create a vendorCredit item for the vendor created in 1. We need to set value of vendorRef to be the Id of the vendor created in 1
+ * </README:>
+ */
+
 
 require_once(__DIR__ . '/vendor/autoload.php');
 use QuickBooksOnline\API\DataService\DataService;
@@ -7,6 +18,9 @@ use QuickBooksOnline\API\Facades\Vendor;
 use QuickBooksOnline\API\Facades\Bill;
 use QuickBooksOnline\API\Facades\BillPayment;
 use QuickBooksOnline\API\Facades\VendorCredit;
+use QuickBooksOnline\API\Facades\Account;
+use QuickBooksOnline\API\Facades\Customer;
+
 
 
 //Import Facade classes you are going to use here
@@ -39,8 +53,37 @@ function payBill()
      * Update the OAuth2Token of the dataService object
      */
     $dataService->updateOAuth2Token($accessToken);
+    /**
+     * create necessary entities for paying bills. We are ceate an expense account (for creating bill), a bank account (for creating billPayment) and a customer account (for creating vendorCredit).
+     */
+    $accountExpenseCreate = Account::create([
+        "AccountType" => "Expense",
+        "Name" => uniqid()
+    ]);
+    $accountExpense = $dataService->Add($accountExpenseCreate);
 
-    
+    $accountBankCreate = Account::create([
+        "AccountType" => "Bank",
+        "Name" => uniqid()
+    ]);
+    $accountBank = $dataService->Add($accountBankCreate);
+
+    $customerCreate = Customer::create([
+        "BillAddr" => [
+            "Line1" => "123 Main Street",
+            "City" => "Mountain View",
+            "Country" => "USA",
+            "CountrySubDivisionCode" => "CA",
+            "PostalCode" => "94042"
+        ],
+        "GivenName" => uniqid(),
+        "FamilyName" => "King",
+        "FullyQualifiedName" => uniqid(),
+        "CompanyName" => uniqid(),
+        "DisplayName" => uniqid()
+    ]);
+    $customer = $dataService->Add($customerCreate);
+
     /*
     * build a vendor object for creation. The vendor object represents the seller from whom your company purchases any service or product. 
     * To create a vendor object, we need to provide at least one of the following fields: Title, GivenName, MiddleName, FamilyName, DisplayName, Suffix. Additionally, it is also suggested to provide TaxIdentifier and contact information such as BillAddr, WebAddr, PrimaryEmailAddr, Mobile, PrimaryPhone.(Refer to: https://developer.intuit.com/docs/api/accounting/vendor)
@@ -88,7 +131,7 @@ function payBill()
                 [
                     "AccountRef" =>
                     [
-                        "value" => "7"
+                        "value" => $accountExpense->Id
                     ]
                 ]
             ]
@@ -126,7 +169,7 @@ function payBill()
         "PayType" => "Check",
         "CheckPayment" => [
           "BankAccountRef" => [
-            "value" => "35",
+            "value" => $accountBank->Id,
             "name" => "Checking"
           ]
         ],
@@ -176,12 +219,12 @@ function payBill()
             [
                 "CustomerRef" =>
                 [
-                    "value" =>"1",
+                    "value" =>$customer->Id,
                     "name" =>"Amy's Bird Sanctuary"
                 ],
                 "AccountRef" =>
                 [
-                    "value" =>"8",
+                    "value" =>$accountExpense->Id,
                     "name" => "Bank Charges"
                 ],
                 "BillableStatus" => "Billable",
@@ -221,3 +264,4 @@ function payBill()
 $result = payBill();
 
 ?>
+
