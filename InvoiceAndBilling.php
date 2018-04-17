@@ -129,9 +129,8 @@ function invoiceAndBilling()
         ],
         "BillEmail" => [
             "Address" => "krishnamurti_subramanian@intuit.com"
-        ],
-        "EmailStatus" => "NeedToSend"
-    ]);
+        ]
+     ]);
     $resultingInvoiceObj = $dataService->Add($invoiceObj);
     $invoiceId = $resultingInvoiceObj->Id;   // This needs to be passed in the Payment creation later
     echo "Created invoice Id={$invoiceId}. Reconstructed response body below:\n";
