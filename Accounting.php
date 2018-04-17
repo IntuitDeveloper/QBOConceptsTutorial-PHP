@@ -65,9 +65,7 @@ function accounting()
                 "JournalEntryLineDetail" => [
                 "PostingType" => "Debit",
                 "AccountRef" => [
-                    "value" => $resultingCCObj->Id,
-                    "name" => "I forget"
-                ]
+                    "value" => $resultingCCObj->Id                ]
              ]
             ],
             [
@@ -77,9 +75,7 @@ function accounting()
                 "JournalEntryLineDetail" => [
                     "PostingType" => "Credit",
                     "AccountRef" => [
-                        "value" => $resultingBankAccountObj->Id,
-                        "name" => "I don't remember"
-                    ]
+                        "value" => $resultingBankAccountObj->Id                    ]
                 ]
             ]
         ]
