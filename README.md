@@ -17,8 +17,8 @@ This sample app is meant to showcase an example of how to integrate your app wit
 ### Via Github Repo (Recommended)
 
 ```bash
-$ git clone https://github.com/IntuitDeveloper/OAuth2.0-demo-php.git
-$ cd OAuth2.0-demo-php
+$ git clone https://github.com/IntuitDeveloper/QBOConceptsTutorial-PHP.git
+$ cd QBOConceptsTutorial-PHP
 $ curl -sS https://getcomposer.org/installer | php
 $ composer install
 ```
