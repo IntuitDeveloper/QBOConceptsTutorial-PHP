@@ -21,7 +21,9 @@ session_start();
 function analyzeBusiness()
 {
 
-    // Create SDK instance
+    /*
+     * Create SDK instance
+     */
     $config = include('config.php');
     $dataService = DataService::Configure(array(
         'auth_mode' => 'oauth2',
@@ -37,6 +39,7 @@ function analyzeBusiness()
      */
     $accessToken = $_SESSION['sessionAccessToken'];
     $dataService->throwExceptionOnError(true);
+
     /*
      * Update the OAuth2Token of the dataService object
      */
