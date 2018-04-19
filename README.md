@@ -1,3 +1,5 @@
+[![Sample Banner](views/Sample.png)][ss1]
+
 Hackathon PHP
 ==========================================================
 
@@ -126,3 +128,5 @@ Then click the <input type="button" value="Login (OAuth2.0)"> button to authoriz
 Events are logged to the Node.js console.
 
 ![APP screenshots](views/app.png)
+
+[ss1]: https://help.developer.intuit.com/s/samplefeedback?cid=9010&repoName=QBOConceptsTutorial-PHP
