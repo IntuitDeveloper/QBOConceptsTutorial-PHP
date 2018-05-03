@@ -88,6 +88,8 @@ function payBill()
     * build a vendor object for creation. The vendor object represents the seller from whom your company purchases any service or product. 
     * To create a vendor object, we need to provide at least one of the following fields: Title, GivenName, MiddleName, FamilyName, DisplayName, Suffix. Additionally, it is also suggested to provide TaxIdentifier and contact information such as BillAddr, WebAddr, PrimaryEmailAddr, Mobile, PrimaryPhone.(Refer to: https://developer.intuit.com/docs/api/accounting/vendor)
     */
+
+    //1. Check if the vendor exists else create a vendor
     $vendorCreate = Vendor::create([
         "BillAddr" => [
             "Line1" => "Dianne's Auto Shop",
