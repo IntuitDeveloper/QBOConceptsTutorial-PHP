@@ -44,64 +44,173 @@ function invoiceAndBilling()
     $dataService->updateOAuth2Token($accessToken);
 
     $dataService->setLogLocation("/Users/ksubramanian3/Desktop/HackathonLogs");
- 
+
+    // Generate GUID to associate with the sample account names
+    function getGUID(){
+        if (function_exists('com_create_guid')){
+            return com_create_guid();
+        }else{
+            mt_srand((double)microtime()*10000);//optional for php 4.2.0 and up.
+            $charid = strtoupper(md5(uniqid(rand(), true)));
+            $hyphen = chr(45);// "-"
+            $uuid = // "{"
+                $hyphen.substr($charid, 0, 8);
+            return $uuid;
+        }
+    }
+
+
 //  The business logic starts here
-//   1. Add a customer
-    $customerObj = Customer::create([
-        "BillAddr" => [
-            "Line1"=>  "123 Main Street",
-            "City"=>  "Mountain View",
-            "Country"=>  "USA",
-            "CountrySubDivisionCode"=>  "CA",
-            "PostalCode"=>  "94042"
-        ],
-        "Notes" =>  "Here are other details.",
-        "Title"=>  "Mr",
-        "GivenName"=>  "King" . rand(0, 10000), // Append a random number to have a new customer for testing repetitively 
-        "MiddleName"=>  "1B",
-        "FamilyName"=>  "Emperor",
-        "Suffix"=>  "Jr",
-        "FullyQualifiedName"=>  "Benevolent King",
-        "CompanyName"=>  "King Benevolent",
-        "DisplayName"=>  "Benevolent King" . rand(0,10000),
-        "PrimaryPhone"=>  [
-            "FreeFormNumber"=>  "(555) 555-5555"
-        ],
-        "PrimaryEmailAddr"=>  [
-            "Address" => "author@intuit.com"
-        ]
-    ]);
-    $resultingCustomerObj = $dataService->Add($customerObj); 
-    $customerId = $resultingCustomerObj->Id; // This needs to be passed in the Invoice creation later
-    echo "Created customer Id={$customerId}. Reconstructed response body below:\n";
-    $result = json_encode($resultingCustomerObj, JSON_PRETTY_PRINT);
-    print_r($result . "\n\n\n");
+//   1. Add a customer  ( First let us male sure thay the customer exisits if not we create a new customer )
+
+    $GUID = getGUID();
+    $customerName = 'Sample-Customer' . $GUID;
+    $customerId = null;
+
+
+    $i = 1;
+    while (1) {
+        $allCustomers = $dataService->FindAll('Customer', $i, 500);
+        $error = $dataService->getLastError();
+        if ($error) {
+            echo "The Status code is: " . $error->getHttpStatusCode() . "\n";
+            echo "The Helper message is: " . $error->getOAuthHelperError() . "\n";
+            echo "The Response message is: " . $error->getResponseBody() . "\n";
+            exit();
+        }
+        if (!$allCustomers || (0==count($allCustomers))) {
+            break;
+        }
+        foreach ($allCustomers as $oneCustomer) {
+            // Check if the Income Account exists
+            if($oneCustomer->GivenName == $customerName && $oneCustomer->DisplayName == $customerName)
+            {
+                        $customerId = $oneCustomer->Id;
+            }
+        }
+    }
+
+    // Create or Update Customer based on the above result
+    if($customerId == null) {
+        $customerObj = Customer::create([
+            "BillAddr" => [
+                "Line1"=>  "123 Main Street",
+                "City"=>  "Mountain View",
+                "Country"=>  "USA",
+                "CountrySubDivisionCode"=>  "CA",
+                "PostalCode"=>  "94042"
+            ],
+            "Notes" =>  "Here are other details.",
+            "Title"=>  "Mr",
+            "GivenName"=>   $customerName,
+            "MiddleName"=>  "1B",
+            "FamilyName"=>  "Emperor",
+            "Suffix"=>  "Jr",
+            "FullyQualifiedName"=>  "Sample Company",
+            "CompanyName"=>  "Sample Company",
+            "DisplayName"=> $customerName,
+            "PrimaryPhone"=>  [
+                "FreeFormNumber"=>  "(555) 555-5555"
+            ],
+            "PrimaryEmailAddr"=>  [
+                "Address" => "author@intuit.com"
+            ]
+        ]);
+        $resultingCustomerObj = $dataService->Add($customerObj);
+        $customerId = $resultingCustomerObj->Id; // This needs to be passed in the Invoice creation later
+        echo "Created customer Id={$customerId}. Reconstructed response body below:\n";
+        $result = json_encode($resultingCustomerObj, JSON_PRETTY_PRINT);
+        print_r($result . "\n\n\n");
+    }
+
 
 //  2. Add an item
-//  First, let us make sure these acounts exist: Income, Expense, Asset
-    $incomeAccountObj = Account::create([
-        "AccountType" => "Income",
-        "AccountSubType" => "SalesOfProductIncome",
-        "Name" => "Office supplies" . rand(0,1000) 
-    ]);
-    $resultingIncomeAccountObj = $dataService->Add($incomeAccountObj);      
-    $incomeAccountId = $resultingIncomeAccountObj->Id;
+    // First, let us make sure these acounts exist: Income, Expense, Asset
 
-    $expenseAccountObj = Account::create([
-        "AccountType" => "CostOfGoodsSold",
-        "AccountSubType" => "SuppliesMaterialsCogs",
-        "Name" => "Cost of Goods sold " . rand(0,1000) 
-    ]);
-    $resultingExpenseAccountObj = $dataService->Add($expenseAccountObj);      
-    $expenseAccountId = $resultingExpenseAccountObj->Id;
 
-    $assetAccountObj = Account::create([
-        "AccountType" => "Other Current Asset",
-        "AccountSubType" => "Inventory",
-        "Name" => "Inventory asset " . rand(0,1000) 
-    ]);
-    $resultingAssetAccountObj = $dataService->Add($assetAccountObj);      
-    $assetAccountId = $resultingAssetAccountObj->Id;
+    $GUID = getGUID();
+    $incomeAccountName = 'Sample-Income-Account' . $GUID;
+    $expenseAccountName = 'Sample-Expense-Account' . $GUID;
+    $assetAccountName = 'Sample-Asset-Account' . $GUID;
+
+    $incomeAccountId = null;
+    $expenseAccountId = null;
+    $assetAccountId = null;
+
+    $i = 1;
+    while (1) {
+        $allAccounts = $dataService->FindAll('Account', $i, 500);
+        $error = $dataService->getLastError();
+        if ($error) {
+            echo "The Status code is: " . $error->getHttpStatusCode() . "\n";
+            echo "The Helper message is: " . $error->getOAuthHelperError() . "\n";
+            echo "The Response message is: " . $error->getResponseBody() . "\n";
+            exit();
+        }
+        if (!$allAccounts || (0==count($allAccounts))) {
+            break;
+        }
+        foreach ($allAccounts as $oneAccount) {
+            // Check if the Income Account exists
+            if($oneAccount->AccountType == "Income" && $oneAccount->AccountSubType == "SalesOfProductIncome")
+            {
+                if($oneAccount->Name == $incomeAccountName) {
+                    $incomeAccountId = $oneAccount->Id;
+                }
+            }
+            // Check if the Expense Account exists
+            if($oneAccount->AccountType == "CostOfGoodsSold" && $oneAccount->AccountSubType == "SuppliesMaterialsCogs")
+            {
+                if($oneAccount->Name == $expenseAccountName)
+                {
+                    $expenseAccountId = $oneAccount->Id;
+                }
+            }
+            // Check if the Asset Account exists
+            if($oneAccount->AccountType == "Other Current Asset" && $oneAccount->AccountSubType == "Inventory")
+            {
+                if($oneAccount->Name == $assetAccountName)
+                {
+                    $assetAccountId = $oneAccount->Id;
+                }
+            }
+        }
+    }
+
+
+    // Create or Update Income Account based on the above result
+    if($incomeAccountId == null) {
+        $incomeAccountObj = Account::create([
+            "AccountType" => "Income",
+            "AccountSubType" => "SalesOfProductIncome",
+            "Name" => $incomeAccountName
+        ]);
+        $resultingIncomeAccountObj = $dataService->Add($incomeAccountObj);
+        $incomeAccountId = $resultingIncomeAccountObj->Id;
+    }
+
+    // Create or Update Expense Account based on the above result
+    if($expenseAccountId == null) {
+        $expenseAccountObj = Account::create([
+            "AccountType" => "CostOfGoodsSold",
+            "AccountSubType" => "SuppliesMaterialsCogs",
+            "Name" => $expenseAccountName
+        ]);
+        $resultingExpenseAccountObj = $dataService->Add($expenseAccountObj);
+        $expenseAccountId = $resultingExpenseAccountObj->Id;
+    }
+
+    // Create or Update Asset Account based on the above result
+    if($assetAccountId == null) {
+        $assetAccountObj = Account::create([
+            "AccountType" => "Other Current Asset",
+            "AccountSubType" => "Inventory",
+            "Name" => $assetAccountName
+        ]);
+        $resultingAssetAccountObj = $dataService->Add($assetAccountObj);
+        $assetAccountId = $resultingAssetAccountObj->Id;
+    }
+
 
     $dateTime = new \DateTime('NOW');
     $ItemObj = Item::create([
