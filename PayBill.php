@@ -57,7 +57,6 @@ function payBill()
     $vendorRef = getVendorObj($dataService);
 
     /*
-    * build a bill object for creation. A bill object is an AP transaction representing a request-for-payment from a third party for goods/services rendered, received, or both.
     * To create a bill object, we need to provide at least one line(Individual line items of a transaction. Required fields include: Id, Amount and DetailType) and VendorRef (with id from the created vendor object above).(Refer to: https://developer.intuit.com/docs/api/accounting/vendor)
     */
     $billCreate = Bill::create([
