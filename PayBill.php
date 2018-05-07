@@ -2,11 +2,11 @@
 /**
  * <README:>
  * Here is a quick tutorial to create a vendor, bill for a vendor, a billPayment for a bill and a vendorCredit for a vendor.
-* 0. create necessay dependency entities: an expense account (for creating bill), a bank account (for creating billPayment) and a customer account (for creating vendorCredit)
-* 1. Add a new vendor 
-* 2. Add a new bill item and set the value of vendorRef to be the Id of the vendor created in 1
-* 3. Create a billPayment  for the bill created in 2. We need to set value of vendorRef to be the Id of the vendor created in 1 and Line.LinkedTxn.TxnId to be the Id of the bill created in 2
-* 4. Create a vendorCredit item for the vendor created in 1. We need to set value of vendorRef to be the Id of the vendor created in 1
+ * 0. create necessay dependency entities: an expense account (for creating bill), a bank account (for creating billPayment) and a customer account (for creating vendorCredit)
+ * 1. Add a new vendor
+ * 2. Add a new bill item and set the value of vendorRef to be the Id of the vendor created in 1
+ * 3. Create a billPayment  for the bill created in 2. We need to set value of vendorRef to be the Id of the vendor created in 1 and Line.LinkedTxn.TxnId to be the Id of the bill created in 2
+ * 4. Create a vendorCredit item for the vendor created in 1. We need to set value of vendorRef to be the Id of the vendor created in 1
  * </README:>
  */
 
@@ -21,11 +21,6 @@ use QuickBooksOnline\API\Facades\VendorCredit;
 use QuickBooksOnline\API\Facades\Account;
 use QuickBooksOnline\API\Facades\Customer;
 
-
-
-//Import Facade classes you are going to use here
-//For example, if you need to use Customer, add
-//use QuickBooksOnline\API\Facades\Customer;
 
 
 session_start();
@@ -56,92 +51,35 @@ function payBill()
     /**
      * create necessary entities for paying bills. We are ceate an expense account (for creating bill), a bank account (for creating billPayment) and a customer account (for creating vendorCredit).
      */
-    $accountExpenseCreate = Account::create([
-        "AccountType" => "Expense",
-        "Name" => uniqid()
-    ]);
-    $accountExpense = $dataService->Add($accountExpenseCreate);
-
-    $accountBankCreate = Account::create([
-        "AccountType" => "Bank",
-        "Name" => uniqid()
-    ]);
-    $accountBank = $dataService->Add($accountBankCreate);
-
-    $customerCreate = Customer::create([
-        "BillAddr" => [
-            "Line1" => "123 Main Street",
-            "City" => "Mountain View",
-            "Country" => "USA",
-            "CountrySubDivisionCode" => "CA",
-            "PostalCode" => "94042"
-        ],
-        "GivenName" => uniqid(),
-        "FamilyName" => "King",
-        "FullyQualifiedName" => uniqid(),
-        "CompanyName" => uniqid(),
-        "DisplayName" => uniqid()
-    ]);
-    $customer = $dataService->Add($customerCreate);
+    $accountExpenseRef = getExpenseAccountObj($dataService);
+    $bankaccountRef = getBankAccountObj($dataService);
+    $customerRef = getCustomerObj($dataService);
+    $vendorRef = getVendorObj($dataService);
 
     /*
-    * build a vendor object for creation. The vendor object represents the seller from whom your company purchases any service or product. 
-    * To create a vendor object, we need to provide at least one of the following fields: Title, GivenName, MiddleName, FamilyName, DisplayName, Suffix. Additionally, it is also suggested to provide TaxIdentifier and contact information such as BillAddr, WebAddr, PrimaryEmailAddr, Mobile, PrimaryPhone.(Refer to: https://developer.intuit.com/docs/api/accounting/vendor)
-    */
-
-    //1. Check if the vendor exists else create a vendor
-    $vendorCreate = Vendor::create([
-        "BillAddr" => [
-            "Line1" => "Dianne's Auto Shop",
-            "Line2" => "Dianne Bradley",
-            "Line3" => "29834 Mustang Ave.",
-            "City" => "Millbrae",
-            "Country" => "U.S.A",
-            "CountrySubDivisionCode" => "CA",
-            "PostalCode" => "94030"
-        ],
-        "DisplayName" => uniqid(),
-    ]);
-    /*
-     * create a vendor object via dataService.
-     */
-    $vendor = $dataService->Add($vendorCreate);
-    print_r("***************************************************\n");
-    $error = $dataService->getLastError();
-    if ($error) {
-        echo "The Status code is: " . $error->getHttpStatusCode() . "\n";
-        echo "The Helper message is: " . $error->getOAuthHelperError() . "\n";
-        echo "The Response message is: " . $error->getResponseBody() . "\n";
-    }
-    else {
-        echo "Created Vendor=";
-        print_r($vendor);
-    }
-    
-   /*
-    * build a bill object for creation. A bill object is an AP transaction representing a request-for-payment from a third party for goods/services rendered, received, or both. 
+    * build a bill object for creation. A bill object is an AP transaction representing a request-for-payment from a third party for goods/services rendered, received, or both.
     * To create a bill object, we need to provide at least one line(Individual line items of a transaction. Required fields include: Id, Amount and DetailType) and VendorRef (with id from the created vendor object above).(Refer to: https://developer.intuit.com/docs/api/accounting/vendor)
     */
     $billCreate = Bill::create([
         "Line" =>
-        [
             [
-                "Id" => "1",
-                "Amount" => 200.00,
-                "DetailType" => "AccountBasedExpenseLineDetail",
-                "AccountBasedExpenseLineDetail" =>
                 [
-                    "AccountRef" =>
-                    [
-                        "value" => $accountExpense->Id
-                    ]
+                    "Id" => "1",
+                    "Amount" => 200.00,
+                    "DetailType" => "AccountBasedExpenseLineDetail",
+                    "AccountBasedExpenseLineDetail" =>
+                        [
+                            "AccountRef" =>
+                                [
+                                    "value" => $accountExpenseRef->Id
+                                ]
+                        ]
                 ]
-            ]
-        ],
+            ],
         "VendorRef" =>
-        [
-            "value" =>$vendor->Id
-        ]
+            [
+                "value" =>$vendorRef->Id
+            ]
     ]);
     /*
      * create a bill object via dataService.
@@ -160,38 +98,36 @@ function payBill()
     }
 
     /*
-    * build a billPayment object for creation. A billPayment object represents the payment transaction for a bill that the business owner receives from a vendor for goods or services purchased from the vendor.  
+    * build a billPayment object for creation. A billPayment object represents the payment transaction for a bill that the business owner receives from a vendor for goods or services purchased from the vendor.
     * To create a billPayment, we need to provide at least one line(Individual line items of a transaction. Required fields include: Id, Amount and DetailType), VendorRef (with id from the created vendor object above), PayType(Check, CreditCard), CheckPayment(if PayType is Check)/CreditCardPayment(if PayType is CreditCard), TotalAmt.(Refer to: https://developer.intuit.com/docs/api/accounting/billpayment)
     */
     $billPayMentCreate = BillPayment::create([
         "VendorRef" => [
-          "value" => $vendor->Id,
-          "name" => "Bob's Burger Joint"
+            "value" => $vendorRef->Id
         ],
         "PayType" => "Check",
         "CheckPayment" => [
-          "BankAccountRef" => [
-            "value" => $accountBank->Id,
-            "name" => "Checking"
-          ]
+            "BankAccountRef" => [
+                "value" => $bankaccountRef->Id
+            ]
         ],
         "TotalAmt" => 200.00,
         "PrivateNote" => "Acct. 1JK90",
         "Line" => [
-          [
-            "Amount" => 200.00,
-            "LinkedTxn" => [
-              [
-                "TxnId" => $bill->Id,
-                "TxnType" => "Bill"
-              ]
+            [
+                "Amount" => 200.00,
+                "LinkedTxn" => [
+                    [
+                        "TxnId" => $bill->Id,
+                        "TxnType" => "Bill"
+                    ]
+                ]
             ]
-          ]
         ]
-      ]);
+    ]);
 
     /*
-     * create a billPayment object via dataService. 
+     * create a billPayment object via dataService.
      */
     $billPayment = $dataService->Add($billPayMentCreate);
     print_r("***************************************************\n");
@@ -213,40 +149,37 @@ function payBill()
     $vendorCreditCreate= VendorCredit::create([
         "TxnDate" => "2018-04-01",
         "Line" => [
-        [
-            "Id" =>"1",
-            "Amount" => 90.00,
-            "DetailType" => "AccountBasedExpenseLineDetail",
-            "AccountBasedExpenseLineDetail" =>
             [
-                "CustomerRef" =>
-                [
-                    "value" =>$customer->Id,
-                    "name" =>"Amy's Bird Sanctuary"
-                ],
-                "AccountRef" =>
-                [
-                    "value" =>$accountExpense->Id,
-                    "name" => "Bank Charges"
-                ],
-                "BillableStatus" => "Billable",
-                "TaxCodeRef" =>
-                [
-                    "value" =>"TAX"
-                ]
+                "Id" =>"1",
+                "Amount" => 90.00,
+                "DetailType" => "AccountBasedExpenseLineDetail",
+                "AccountBasedExpenseLineDetail" =>
+                    [
+                        "CustomerRef" =>
+                            [
+                                "value" =>$customerRef->Id
+                            ],
+                        "AccountRef" =>
+                            [
+                                "value" =>$bankaccountRef->Id
+                            ],
+                        "BillableStatus" => "Billable",
+                        "TaxCodeRef" =>
+                            [
+                                "value" =>"TAX"
+                            ]
+                    ]
             ]
-        ]
         ],
         "VendorRef" =>
-        [
-            "value" => $vendor->Id,
-            "name" =>"Books by Bessie"
-        ],
-        
+            [
+                "value" => $vendorRef->Id
+            ],
+
         "TotalAmt" => 90.00
-    ]);    
+    ]);
     /*
-     * create a vendorCredit object via dataService. 
+     * create a vendorCredit object via dataService.
      */
     $vendorCredit = $dataService->Add($vendorCreditCreate);
     print_r("***************************************************\n");
@@ -260,8 +193,152 @@ function payBill()
         echo "Created VendorCredit=";
         print_r($vendorCredit);
     }
-    return $result;
+
 }
+
+
+
+/*
+   Find if an account of "Cost of Goods Sold" type exists, if not, create one
+ */
+function getExpenseAccountObj($dataService) {
+
+    $accountArray = $dataService->Query("select * from Account where AccountType='" . EXPENSE_ACCOUNT_TYPE . "' and AccountSubType='" . EXPENSE_ACCOUNT_SUBTYPE . "'");
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        if (sizeof($accountArray) > 0) {
+            return current($accountArray);
+        }
+    }
+
+
+    // Create Expense Account
+    $expenseAccountRequestObj = Account::create([
+        "AccountType" => EXPENSE_ACCOUNT_TYPE,
+        "AccountSubType" => EXPENSE_ACCOUNT_SUBTYPE,
+        "Name" => "ExpenseAccount-" . getGUID()
+    ]);
+    $expenseAccountObj = $dataService->Add($expenseAccountRequestObj);
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        echo "Created Expense Account with Id={$expenseAccountObj->Id}.\n\n";
+        return $expenseAccountObj;
+    }
+
+}
+
+/*
+   Find if an account of "Bank" type exists, if not, create one
+ */
+function getBankAccountObj($dataService) {
+
+    $accountArray = $dataService->Query("select * from Account where AccountType='" . 'Bank' . "' and AccountSubType='" . 'Bank' . "'");
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        if (sizeof($accountArray) > 0) {
+            return current($accountArray);
+        }
+    }
+
+
+    // Create Expense Account
+    $bankAccountRequestObj = Account::create([
+        "AccountType" => 'Bank',
+        "AccountSubType" => 'Bank',
+        "Name" => "BankAccount-" . getGUID()
+    ]);
+    $bankAccountObj = $dataService->Add($bankAccountRequestObj);
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        echo "Created Expense Account with Id={$bankAccountObj->Id}.\n\n";
+        return $bankAccountObj;
+    }
+
+}
+
+/*
+  Find if a customer with DisplayName if not, create one and return
+*/
+function getCustomerObj($dataService) {
+
+    $customerName = 'Bob-Smith';
+    $customerArray = $dataService->Query("select * from Customer where DisplayName='" . $customerName . "'");
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        if (sizeof($customerArray) > 0) {
+            return current($customerArray);
+        }
+    }
+
+    // Create Customer
+    $customerRequestObj = Customer::create([
+        "DisplayName" => $customerName . getGUID()
+    ]);
+    $customerResponseObj = $dataService->Add($customerRequestObj);
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        echo "Created Customer with Id={$customerResponseObj->Id}.\n\n";
+        return $customerResponseObj;
+    }
+}
+
+
+/*
+  Find if a Vendor exists
+*/
+function getVendorObj($dataService) {
+
+    $vendorName = 'Joes-Vendor';
+    $vendorArray = $dataService->Query("select * from Vendor where DisplayName='" . $vendorName . "'");
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        if (sizeof($vendorArray) > 0) {
+            return current($vendorArray);
+        }
+    }
+
+    // Create Customer
+    $vendorRequestObj = Customer::create([
+        "DisplayName" => $vendorName . getGUID()
+    ]);
+    $vendorResponseObj = $dataService->Add($vendorRequestObj);
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        echo "Created Customer with Id={$vendorResponseObj->Id}.\n\n";
+        return $vendorResponseObj;
+    }
+}
+
+// Generate GUID to associate with the sample account names
+function getGUID(){
+    if (function_exists('com_create_guid')){
+        return com_create_guid();
+    }else{
+        mt_srand((double)microtime()*10000);//optional for php 4.2.0 and up.
+        $charid = strtoupper(md5(uniqid(rand(), true)));
+        $hyphen = chr(45);// "-"
+        $uuid = // "{"
+            $hyphen.substr($charid, 0, 8);
+        return $uuid;
+    }
+}
+
 
 $result = payBill();
 
