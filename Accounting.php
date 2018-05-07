@@ -25,35 +25,26 @@ function accounting()
         'baseUrl' => "development"
     ));
 
-     // Retrieve the accessToken value from session variable
+
+    // Retrieve the accessToken value from session variable
     $accessToken = $_SESSION['sessionAccessToken'];
     $dataService->throwExceptionOnError(true);
 
-     // Update the OAuth2Token of the dataService object
-
+    // Update the OAuth2Token of the dataService object
     $dataService->updateOAuth2Token($accessToken);
 
-    // Start write your business logic here, and store the final result to $result object
-    // Create  bank account
-    $theBankAccountResourceObj = Account::create([
-      "AccountType" => "Bank",
-      "Name" => "Bank account1212"
-    ]);
-    $resultingBankAccountObj = $dataService->Add($theBankAccountResourceObj);
-    print "Created Id={$resultingBankAccountObj->Id}. Reconstructed response body:\n\n";
-    $result = json_encode($resultingBankAccountObj, JSON_PRETTY_PRINT);
-    print_r($result);
-    // Create credit card account
-    $theCCResourceObj = Account::create([
-        "AccountType" => "Credit Card",
-        "Name" => "Credit card account1212"
-    ]);
-    $resultingCCObj = $dataService->Add($theCCResourceObj);
-    print "Created Id={$resultingCCObj->Id}. Reconstructed response body:\n\n";
-    $result = json_encode($resultingCCObj, JSON_PRETTY_PRINT);
-    print_r($result);
 
-    // Make jornal using the two accounts created
+    /*
+     * Usecase 1
+     * Generate names for the Bank Account and Credit Card Account
+     */
+    $bankAccountRef = getBankAccountObj($dataService);
+    $creditCardAccountRef = getCreditCardAccountObj($dataService);
+
+    /*
+     * Usecase 2
+     * Make Journal Entry using the above two accounts created / Updated
+     */
     $theResourceObj = JournalEntry::create([
         "Line" => [
             [
@@ -62,10 +53,10 @@ function accounting()
                 "Amount" => 100.0,
                 "DetailType" => "JournalEntryLineDetail",
                 "JournalEntryLineDetail" => [
-                "PostingType" => "Debit",
-                "AccountRef" => [
-                    "value" => $resultingCCObj->Id                ]
-             ]
+                    "PostingType" => "Debit",
+                    "AccountRef" => [
+                        "value" => $bankAccountRef->Id               ]
+                ]
             ],
             [
                 "Description" => "nov portion of rider insurance",
@@ -74,7 +65,7 @@ function accounting()
                 "JournalEntryLineDetail" => [
                     "PostingType" => "Credit",
                     "AccountRef" => [
-                        "value" => $resultingBankAccountObj->Id                    ]
+                        "value" => $creditCardAccountRef->Id                    ]
                 ]
             ]
         ]
@@ -84,9 +75,89 @@ function accounting()
     print "Created Id={$resultingObj->Id}. Reconstructed response body:\n\n";
     print_r($result);
 
+}
 
-    return $resultingObj;
+
+/*
+   Find if an account of "Bank" type exists, if not, create one
+ */
+function getBankAccountObj($dataService) {
+
+    $accountArray = $dataService->Query("select * from Account where AccountType='" . 'Bank' . "' and AccountSubType='" . 'Bank' . "'");
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        if (sizeof($accountArray) > 0) {
+            return current($accountArray);
+        }
     }
+
+
+    // Create Expense Account
+    $bankAccountRequestObj = Account::create([
+        "AccountType" => 'Bank',
+        "AccountSubType" => 'Bank',
+        "Name" => "BankAccount-" . getGUID()
+    ]);
+    $bankAccountObj = $dataService->Add($bankAccountRequestObj);
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        echo "Created Expense Account with Id={$bankAccountObj->Id}.\n\n";
+        return $bankAccountObj;
+    }
+
+}
+
+/*
+   Find if an account of "Bank" type exists, if not, create one
+ */
+function getCreditCardAccountObj($dataService) {
+
+    $accountArray = $dataService->Query("select * from Account where AccountType='" . 'Credit Card' . "' and AccountSubType='" . 'CreditCard' . "'");
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        if (sizeof($accountArray) > 0) {
+            return current($accountArray);
+        }
+    }
+
+
+    // Create Expense Account
+    $creditCardAccountRequestObj = Account::create([
+        "AccountType" => 'Bank',
+        "AccountSubType" => 'Bank',
+        "Name" => "CreditCardAccount-" . getGUID()
+    ]);
+    $creditCardAccountResponseObj = $dataService->Add($creditCardAccountRequestObj);
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        echo "Created Expense Account with Id={$creditCardAccountResponseObj->Id}.\n\n";
+        return $creditCardAccountResponseObj;
+    }
+
+}
+
+// Generate GUID to associate with the sample account names
+function getGUID(){
+    if (function_exists('com_create_guid')){
+        return com_create_guid();
+    }else{
+        mt_srand((double)microtime()*10000);//optional for php 4.2.0 and up.
+        $charid = strtoupper(md5(uniqid(rand(), true)));
+        $hyphen = chr(45);// "-"
+        $uuid = // "{"
+            $hyphen.substr($charid, 0, 8);
+        return $uuid;
+    }
+}
+
 
 $result = accounting();
 

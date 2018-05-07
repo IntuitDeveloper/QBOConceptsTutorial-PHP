@@ -14,245 +14,348 @@ use QuickBooksOnline\API\Facades\Account;
 
 session_start();
 
-class LandingTheJob {
-    private $dataService;
-    private $config;
-    private $accessToken;
+function landingTheJob()
 
-    public function __construct() {
-        // Create SDK instance
-        $this->config = include('config.php');
-        $this->dataService = DataService::Configure(array(
-            'auth_mode' => 'oauth2',
-            'ClientID' => $this->config['client_id'],
-            'ClientSecret' =>  $this->config['client_secret'],
-            'RedirectURI' => $this->config['oauth_redirect_uri'],
-            'scope' => $this->config['oauth_scope'],
-            'baseUrl' => "development"
-        ));
-        /*
-         * Retrieve the accessToken value from session variable
-         */
-        $this->accessToken = $_SESSION['sessionAccessToken'];
-        $this->dataService->setLogLocation("/Users/afincham/phpLogs");
-        $this->dataService->throwExceptionOnError(true);
-        /*
-         * Update the OAuth2Token of the dataService object
-         */
-        $this->dataService->updateOAuth2Token($this->accessToken);
+{
+    /*  This sample performs the folowing functions:
+     1.   Add 1 customer
+     2.   Add 1 item
+     3    Create Estimate
+     4.   Update Amount in the Estimate
+     5.   Convert Estimates to Invoices
+     6.   Update invoice to add $5 discount
+    */
+
+
+    // Create SDK instance
+    $config = include('config.php');
+    $dataService = DataService::Configure(array(
+        'auth_mode' => 'oauth2',
+        'ClientID' => $config['client_id'],
+        'ClientSecret' =>  $config['client_secret'],
+        'RedirectURI' => $config['oauth_redirect_uri'],
+        'scope' => $config['oauth_scope'],
+        'baseUrl' => "development"
+    ));
+
+    /*
+     * Retrieve the accessToken value from session variable
+     */
+    $accessToken = $_SESSION['sessionAccessToken'];
+    $dataService->throwExceptionOnError(true);
+    /*
+     * Update the OAuth2Token of the dataService object
+     */
+    $dataService->updateOAuth2Token($accessToken);
+
+
+    /*
+     * Create Estimate Item using a Item Ref and Customer Ref
+     */
+    $estimateRequestObj = getEstimateCreateRequestObj($dataService);
+    $estimateCreateResponseObj = $dataService->Add($estimateRequestObj);
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        echo "Created Estimate with Id={$estimateCreateResponseObj->Id}. Reconstructed response body:\n\n";
     }
+    print_r($estimateCreateResponseObj);
 
-    public function addCustomer() {
-        $theCustomerObj = Customer::create([
-            "BillAddr" => [
-                "Line1" => "123 Main Street",
-                "City" => "Mountain View",
-                "Country" => "USA",
-                "CountrySubDivisionCode" => "CA",
-                "PostalCode" => "94042"
-            ],
-            "Notes" => "Some Notes",
-            "Title" => "Mr",
-            "GivenName" => "John",
-            "MiddleName" => "B",
-            "FamilyName" => "Doe",
-            "Suffix" => "Jr",
-            "FullyQualifiedName" => "Kings Groceries",
-            "CompanyName" => "Kings Groceries",
-            "DisplayName" => "SomeOtherDisplayname" . uniqid(),
-            "PrimaryPhone" => [
-                "FreeFormNumber" => "(555) 555-5555"
-            ],
-            "PrimaryEmailAddr" => [
-                "Address" => "jdrew@myemail.com"
+    /*
+     * Update Amount in the Estimate
+     */
+    $estimateId = $estimateCreateResponseObj->Id;
+    $estimate = $this->dataService->FindbyId('estimate', $estimateId);
+    $estimateUpdateRequestObj = Estimate::update($estimate , [
+        "TotalAmt" => 200
+    ]);
+    $estimateUpdateResponseObj = $this->dataService->Update($estimateUpdateRequestObj);
+    print_r($estimateUpdateResponseObj);
+
+    /*
+     * Convert Estimate to Invoice
+     */
+
+    $theInvoiceRequestObj = Invoice::create([
+        "CustomerRef"=> $estimateUpdateResponseObj->CustomRef,
+        "LinkedTxn"=> [
+            "TxnId"=> $estimateId,
+            "TxnType"=> "Estimate"
+        ],
+        "TotalAmt" => 100.00,
+        "Line" => $estimate->Line
+    ]);
+    $resultingInvoiceResponseObj = $this->dataService->Add($theInvoiceRequestObj);
+    print_r($resultingInvoiceResponseObj);
+
+    /*
+     * Update Invoice to add 5$ Discount
+     */
+
+    $theInvoiceResourceObj = Invoice::update($resultingInvoiceResponseObj, [
+        "Line" => [
+            [
+                "Amount" => 5,
+                "DetailType" => "DiscountLineDetail",
+                "DiscountLineDetail" => [
+                    "PercentBased" => false,
+                ]
             ]
-        ]);
+        ]
+    ]);
+    $theInvoiceResponseObj = $this->dataService->Update($theInvoiceResourceObj);
+    print_r($theInvoiceResponseObj);
 
-        $resultingCustObj = $this->dataService->Add($theCustomerObj);
-        return $resultingCustObj;
-    }
+}
 
-    public function addItem() {
-        $incomeAccountInfo = array(
-            'Name' => "Test Account" . uniqid(), 
-            'AccountType' => "Income",
-            'AccountSubType' => "SalesOfProductIncome",
-        );
-        $expenseAccountInfo = array(
-            'Name' => "Cost of Goods Sold" . uniqid(), 
-            'AccountType' => "CostOfGoodsSold",
-            'AccountSubType' => "SuppliesMaterialsCogs"
-        );
-        $assetAccountInfo = array(
-            'Name' => "Inventory Asset" . uniqid(), 
-            'AccountType' => "Other Current Asset",
-            'AccountSubType' => "Inventory"
-        );
-        $incomeAccount = $this->createAccount($incomeAccountInfo);
-        $expenseAccount = $this->createAccount($expenseAccountInfo);
-        $assetAccount = $this->createAccount($assetAccountInfo);
-        $theItemObj = Item::create([
-          "Name" => "Used Car Sample 2" . uniqid(),
-          "UnitPrice" => 200,
-          "IncomeAccountRef" => [
-            "value" => $incomeAccount->Id,
-            "name" => $incomeAccount->Name
-          ],
-          "ExpenseAccountRef" => [
-            "value" => $expenseAccount->Id,
-            "name" => $expenseAccount->Name
-          ],
-          "AssetAccountRef" => [
-            "value" => $assetAccount->Id,
-            "name" => $assetAccount->Name
-          ],
-          "Type" => "Inventory",
-          "TrackQtyOnHand" => true,
-          "QtyOnHand" => 10,
-          "InvStartDate" => "2015-01-01"
-        ]);
-        $resultingItemObj = $this->dataService->Add($theItemObj);
-        return $resultingItemObj;
-    }
 
-    public function createAccount($accountInfo){
-        $theResourceObj = Account::create($accountInfo);
-        $resultingObj = $this->dataService->Add($theResourceObj);
-        return $resultingObj;
-    }
+/*
+Create and return an Estimate object
+- The item name must be unique
+- The customer name must be unique
+*/
+function getEstimateCreateRequestObj($dataService) {
 
-    public function addEstimate($lineItem, $customer) {
-        $theEstimateObj = Estimate::create([
-          "Line" => [
-             [
-               "Description" => "Used Car",
-               "Amount" => $lineItem->UnitPrice,
-               "DetailType" => "SalesItemLineDetail",
-               "SalesItemLineDetail" => [
-                 "ItemRef" => [
-                   "value" => $lineItem->Id,
-                   "name" => $lineItem->Name
-                 ],
-                 "UnitPrice" => $lineItem->UnitPrice,
-                 "Qty" => 1,
-                 "TaxCodeRef" => [
-                   "value" => "NON"
-                 ]
-               ]
-             ],
-             [
-               "Amount" => $lineItem->UnitPrice,
-               "DetailType" => "SubTotalLineDetail",
-               "SubTotalLineDetail" => []
-             ]
-           ],
-           "TxnTaxDetail" => [
-             "TotalTax" => 0
-           ],
-           "CustomerRef" => [
-             "value" => $customer->Id,
-             "name"=> $customer->DisplayName
-           ],
-           "CustomerMemo" => [
-             "value" => "Thank you for your business and have a great day!"
-           ],
-           "TotalAmt" => $lineItem->UnitPrice,
-           "ApplyTaxAfterDiscount" => false,
-           "PrintStatus" => "NeedToPrint",
-           "EmailStatus" => "NotSet",
-           "BillEmail" => $customer->PrimaryEmailAddr
-        ]);
-        $resultingEstimateObj = $this->dataService->Add($theEstimateObj);
-        return $resultingEstimateObj;
-    }
+    // Fetch Item and Customer Refs needed to create an Estimate
+    $itemRef = getItemObj($dataService);
+    $customerRef = getCustomerObj($dataService);
 
-    public function updateEstimate($id, $amt) {
-        $estimate = $this->dataService->FindbyId('estimate', $id);
-        $theResourceObj = Estimate::update($estimate , [
-            "TotalAmt" => $amt
-        ]);
-        $resultingObj = $this->dataService->Update($theResourceObj);
-        return $resultingObj;
-    }
-
-    public function createInvoice($estimate, $customer) {
-        $theResourceObj = Invoice::create([
-            "Line" => $estimate->Line,
-            "CustomerRef"=> [
-                  "value"=> $customer->Id
+    return Estimate::create([
+        "Line" => [
+            [
+                "Description" => "Used Car",
+                "Amount" => 100,
+                "DetailType" => "SalesItemLineDetail",
+                "SalesItemLineDetail" => [
+                    "ItemRef" => [
+                        "value" => $itemRef->Id,
+                        "name" => $itemRef->Name
+                    ],
+                    "UnitPrice" => 100,
+                    "Qty" => 1,
+                    "TaxCodeRef" => [
+                        "value" => "NON"
+                    ]
+                ]
+            ],
+            [
+                "Amount" => 100,
+                "DetailType" => "SubTotalLineDetail",
+                "SubTotalLineDetail" => []
             ]
-        ]);
-        $resultingObj = $this->dataService->Add($theResourceObj);
-        return $resultingObj;
+        ],
+        "TxnTaxDetail" => [
+            "TotalTax" => 0
+        ],
+        "CustomerRef" => [
+            "value" => $customerRef->Id,
+            "name"=> $customerRef->Name
+        ],
+        "CustomerMemo" => [
+            "value" => "Thank you for your business and have a great day!"
+        ],
+        "TotalAmt" => 100,
+        "ApplyTaxAfterDiscount" => false,
+        "PrintStatus" => "NeedToPrint",
+        "EmailStatus" => "NotSet",
+        "BillEmail" => 'customer@sample.com'
+    ]);
+
+}
+
+function getItemObj($dataService) {
+
+    $itemName = 'Sample-Item';
+    $itemArray = $dataService->Query("select * from Item WHERE Name='" . $itemName . "'");
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        if (sizeof($itemArray) > 0) {
+            return current($itemArray);
+        }
     }
 
-    public function updateInvoice($id, $discount) {
-        $invoice = $this->dataService->FindbyId('invoice', $id);
-        $discountAccountInfo = array(
-            'Name' => "$5 discount" . uniqid(), 
-            'AccountType' => "Income",
-            'AccountSubType' => "DiscountsRefundsGiven"
-        );
-        $discountAccount = $this->createAccount($discountAccountInfo);
-        $saleItem = array(
-                     "Amount" => $discount,
-                     "DetailType" => "DiscountLineDetail",
-                     "DiscountLineDetail" => [
-                        "PercentBased" => false,
-                       "DiscountAccountRef" => [
-                         "value" => $discountAccount->Id,
-                         "name" => $discountAccount->Name
-                       ]
-                     ]
-                );
-        array_push($invoice->Line, $saleItem);
-        $theResourceObj = Invoice::update($invoice, [
-            "Line" => $invoice->Line
-        ]);
-        $resultingObj = $this->dataService->Update($theResourceObj);
-        return $resultingObj;
+    // Fetch IncomeAccount, ExoenseAccount and AssetAccount Refs needed to create an Item
+    $incomeAccount = getIncomeAccountObj($dataService);
+    $expenseAccount = getExpenseAccountObj($dataService);
+    $assetAccount = getAssetAccountObj($dataService);
+
+    // Create Item
+    $dateTime = new \DateTime('NOW');
+    $ItemObj = Item::create([
+        "Name" => $itemName,
+        "Description" => "This is the sales description.",
+        "Active" => true,
+        "FullyQualifiedName" => "Office Supplies",
+        "Taxable" => true,
+        "UnitPrice" => 25,
+        "Type" => "Inventory",
+        "IncomeAccountRef"=> [
+            "value"=>  $incomeAccount->Id
+        ],
+        "PurchaseDesc"=> "This is the purchasing description.",
+        "PurchaseCost"=> 35,
+        "ExpenseAccountRef"=> [
+            "value"=> $expenseAccount->Id
+        ],
+        "AssetAccountRef"=> [
+            "value"=> $assetAccount->Id
+        ],
+        "TrackQtyOnHand" => true,
+        "QtyOnHand"=> 100,
+        "InvStartDate"=> $dateTime
+    ]);
+    $resultingItemObj = $dataService->Add($ItemObj);
+    $itemId = $resultingItemObj->Id;  // This needs to be passed in the Invoice creation later
+    echo "Created item Id={$itemId}. Reconstructed response body below:\n";
+    $result = json_encode($resultingItemObj, JSON_PRETTY_PRINT);
+    print_r($result . "\n\n\n");
+    return $resultingItemObj;
+}
+
+/*
+  Find if a customer with DisplayName if not, create one and return
+*/
+function getCustomerObj($dataService) {
+
+    $customerName = 'Bob-Smith';
+    $customerArray = $dataService->Query("select * from Customer where DisplayName='" . $customerName . "'");
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        if (sizeof($customerArray) > 0) {
+            return current($customerArray);
+        }
+    }
+
+    // Create Customer
+    $customerRequestObj = Customer::create([
+        "DisplayName" => $customerName . getGUID()
+    ]);
+    $customerResponseObj = $dataService->Add($customerRequestObj);
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        echo "Created Customer with Id={$customerResponseObj->Id}.\n\n";
+        return $customerResponseObj;
+    }
+}
+/*
+  Find if an account of Income type exists, if not, create one
+*/
+function getIncomeAccountObj($dataService) {
+
+    $accountArray = $dataService->Query("select * from Account where AccountType='" . INCOME_ACCOUNT_TYPE . "' and AccountSubType='" . INCOME_ACCOUNT_SUBTYPE . "'");
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        if (sizeof($accountArray) > 0) {
+            return current($accountArray);
+        }
+    }
+
+    // Create Income Account
+    $incomeAccountRequestObj = Account::create([
+        "AccountType" => INCOME_ACCOUNT_TYPE,
+        "AccountSubType" => INCOME_ACCOUNT_SUBTYPE,
+        "Name" => "IncomeAccount-" . getGUID()
+    ]);
+    $incomeAccountObject = $dataService->Add($incomeAccountRequestObj);
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        echo "Created Income Account with Id={$incomeAccountObject->Id}.\n\n";
+        return $incomeAccountObject;
+    }
+
+}
+
+/*
+  Find if an account of "Cost of Goods Sold" type exists, if not, create one
+*/
+function getExpenseAccountObj($dataService) {
+
+    $accountArray = $dataService->Query("select * from Account where AccountType='" . EXPENSE_ACCOUNT_TYPE . "' and AccountSubType='" . EXPENSE_ACCOUNT_SUBTYPE . "'");
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        if (sizeof($accountArray) > 0) {
+            return current($accountArray);
+        }
+    }
+
+    // Create Expense Account
+    $expenseAccountRequestObj = Account::create([
+        "AccountType" => EXPENSE_ACCOUNT_TYPE,
+        "AccountSubType" => EXPENSE_ACCOUNT_SUBTYPE,
+        "Name" => "ExpenseAccount-" . getGUID()
+    ]);
+    $expenseAccountObj = $dataService->Add($expenseAccountRequestObj);
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        echo "Created Expense Account with Id={$expenseAccountObj->Id}.\n\n";
+        return $expenseAccountObj;
+    }
+
+}
+
+/*
+  Find if an account of "Other Current Asset" type exists, if not, create one
+*/
+function getAssetAccountObj($dataService) {
+
+    $accountArray = $dataService->Query("select * from Account where AccountType='" . ASSET_ACCOUNT_TYPE . "' and AccountSubType='" . ASSET_ACCOUNT_SUBTYPE . "'");
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        if (sizeof($accountArray) > 0) {
+            return current($accountArray);
+        }
+    }
+
+    // Create Asset Account
+    $assetAccountRequestObj = Account::create([
+        "AccountType" => ASSET_ACCOUNT_TYPE,
+        "AccountSubType" => ASSET_ACCOUNT_SUBTYPE,
+        "Name" => "AssetAccount-" . getGUID()
+    ]);
+    $assetAccountObj = $dataService->Add($assetAccountRequestObj);
+    $error = $dataService->getLastError();
+    if ($error) {
+        logError($error);
+    } else {
+        echo "Created Asset Account with Id={$assetAccountObj->Id}.\n\n";
+        return $assetAccountObj;
+    }
+
+}
+
+// Generate GUID to associate with the sample account names
+function getGUID(){
+    if (function_exists('com_create_guid')){
+        return com_create_guid();
+    }else{
+        mt_srand((double)microtime()*10000);//optional for php 4.2.0 and up.
+        $charid = strtoupper(md5(uniqid(rand(), true)));
+        $hyphen = chr(45);// "-"
+        $uuid = // "{"
+            $hyphen.substr($charid, 0, 8);
+        return $uuid;
     }
 }
 
 
-$LandingJob = new LandingTheJob();
 
-// Add Customer use case
-$customerArr = $LandingJob->addCustomer();
-$customerId = $customerArr->Id;
-$resultingJson = json_encode($customerArr, JSON_PRETTY_PRINT);
-$printedResult = "Customer: " . $customerId . " has been created.\n" . $resultingJson;
-
-// Add Item use case
-$itemArr = $LandingJob->addItem();
-$itemId = $itemArr->Id;
-$resultingJson = json_encode($itemArr, JSON_PRETTY_PRINT);
-$printedResult .= "\n\nItem: " . $itemId . " has been created.\n" . $resultingJson;
-
-// Create Estimate use case
-$estimateArr = $LandingJob->addEstimate($itemArr, $customerArr);
-$estimateId = $estimateArr->Id;
-$resultingJson = json_encode($estimateArr, JSON_PRETTY_PRINT);
-$printedResult .= "\n\nEstimate: " . $estimateId . " has been created.\n" . $resultingJson;
-
-// Update Estimate amount use case
-$estimateArr = $LandingJob->updateEstimate($estimateId, 195);
-$resultingJson = json_encode($estimateArr, JSON_PRETTY_PRINT);
-$printedResult .= "\n\nEstimate: " . $estimateId . " has been updated.\n" . $resultingJson;
-
-// Create Invoice use case
-$invoiceArr = $LandingJob->createInvoice($estimateArr, $customerArr);
-$invoiceId = $invoiceArr->Id;
-$resultingJson = json_encode($invoiceArr, JSON_PRETTY_PRINT);
-$printedResult .= "\n\nInvoice: " . $invoiceId . " has been created.\n" . $resultingJson;
-
-// Update Invoice to add $5 discount use case
-$resultingArr = $LandingJob->updateInvoice($invoiceId, 5.00);
-$resultingJson = json_encode($resultingArr, JSON_PRETTY_PRINT);
-$printedResult .= "\n\nInvoice: " . $invoiceId . " has been updated with discount.\n" . $resultingJson;
-
-return print_r($printedResult);
-
-//$result = landingJob();
-
+$result = landingTheJob();
 ?>
+
