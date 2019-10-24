@@ -207,7 +207,7 @@ function getExpenseAccountObj($dataService) {
     if ($error) {
         logError($error);
     } else {
-        if (sizeof($accountArray) > 0) {
+        if (is_array($accountArray) && sizeof($accountArray) > 0) {
             return current($accountArray);
         }
     }
@@ -240,7 +240,7 @@ function getBankAccountObj($dataService) {
     if ($error) {
         logError($error);
     } else {
-        if (sizeof($accountArray) > 0) {
+        if (is_array($accountArray) && sizeof($accountArray) > 0) {
             return current($accountArray);
         }
     }
@@ -305,7 +305,7 @@ function getVendorObj($dataService) {
     if ($error) {
         logError($error);
     } else {
-        if (sizeof($vendorArray) > 0) {
+        if (is_array($vendorArray) && sizeof($vendorArray) > 0) {
             return current($vendorArray);
         }
     }

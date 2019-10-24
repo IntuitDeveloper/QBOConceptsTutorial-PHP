@@ -140,7 +140,7 @@ function getCustomerObj($dataService) {
     if ($error) {
         logError($error);
     } else {
-        if (sizeof($customerArray) > 0) {
+        if (is_array($customerArray) && sizeof($customerArray) > 0) {
             return current($customerArray);
         }
     }
@@ -171,7 +171,7 @@ function getItemObj($dataService) {
     if ($error) {
         logError($error);
     } else {
-        if (sizeof($itemArray) > 0) {
+        if (is_array($itemArray) && sizeof($itemArray) > 0) {
             return current($itemArray);
         }
     }
@@ -224,7 +224,7 @@ function getIncomeAccountObj($dataService) {
     if ($error) {
         logError($error);
     } else {
-        if (sizeof($accountArray) > 0) {
+        if (is_array($accountArray) && sizeof($accountArray) > 0) {
             return current($accountArray);
         }
     }
@@ -256,7 +256,7 @@ function getExpenseAccountObj($dataService) {
     if ($error) {
         logError($error);
     } else {
-        if (sizeof($accountArray) > 0) {
+        if (is_array($accountArray) && sizeof($accountArray) > 0) {
             return current($accountArray);
         }
     }
@@ -288,7 +288,7 @@ function getAssetAccountObj($dataService) {
     if ($error) {
         logError($error);
     } else {
-        if (sizeof($accountArray) > 0) {
+        if (is_array($accountArray) && sizeof($accountArray) > 0) {
             return current($accountArray);
         }
     }

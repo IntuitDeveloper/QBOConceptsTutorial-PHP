@@ -88,7 +88,7 @@ function getBankAccountObj($dataService) {
     if ($error) {
         logError($error);
     } else {
-        if (sizeof($accountArray) > 0) {
+        if (is_array($accountArray) && sizeof($accountArray) > 0) {
             return current($accountArray);
         }
     }
@@ -121,7 +121,7 @@ function getCreditCardAccountObj($dataService) {
     if ($error) {
         logError($error);
     } else {
-        if (sizeof($accountArray) > 0) {
+        if (is_array($accountArray) && sizeof($accountArray) > 0) {
             return current($accountArray);
         }
     }
