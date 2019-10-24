@@ -10,6 +10,13 @@ use QuickBooksOnline\API\Facades\Invoice;
 use QuickBooksOnline\API\Facades\Payment;
 use QuickBooksOnline\API\Facades\Account;
 
+const INCOME_ACCOUNT_TYPE = "Income";
+const INCOME_ACCOUNT_SUBTYPE = "SalesOfProductIncome";
+const EXPENSE_ACCOUNT_TYPE = "Cost of Goods Sold";
+const EXPENSE_ACCOUNT_SUBTYPE = "SuppliesMaterialsCogs";
+const ASSET_ACCOUNT_TYPE = "Other Current Asset";
+const ASSET_ACCOUNT_SUBTYPE = "Inventory";
+
 session_start();
 
 function invoiceAndBilling()
