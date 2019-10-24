@@ -274,7 +274,7 @@ function getCustomerObj($dataService) {
     if ($error) {
         logError($error);
     } else {
-        if (sizeof($customerArray) > 0) {
+        if (is_array($customerArray) && sizeof($customerArray) > 0) {
             return current($customerArray);
         }
     }
