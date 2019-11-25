@@ -83,7 +83,7 @@ function accounting()
  */
 function getBankAccountObj($dataService) {
 
-    $accountArray = $dataService->Query("select * from Account where AccountType='" . 'Bank' . "' and AccountSubType='" . 'Bank' . "'");
+    $accountArray = $dataService->Query("select * from Account where AccountType='" . 'Bank' . "' and AccountSubType='" . 'Checking' . "'");
     $error = $dataService->getLastError();
     if ($error) {
         logError($error);
@@ -97,7 +97,7 @@ function getBankAccountObj($dataService) {
     // Create Expense Account
     $bankAccountRequestObj = Account::create([
         "AccountType" => 'Bank',
-        "AccountSubType" => 'Bank',
+        "AccountSubType" => 'Checking',
         "Name" => "BankAccount-" . getGUID()
     ]);
     $bankAccountObj = $dataService->Add($bankAccountRequestObj);
@@ -116,7 +116,7 @@ function getBankAccountObj($dataService) {
  */
 function getCreditCardAccountObj($dataService) {
 
-    $accountArray = $dataService->Query("select * from Account where AccountType='" . 'Credit Card' . "' and AccountSubType='" . 'CreditCard' . "'");
+    $accountArray = $dataService->Query("select * from Account where AccountType='" . 'Credit Card' . "'");
     $error = $dataService->getLastError();
     if ($error) {
         logError($error);
@@ -129,8 +129,7 @@ function getCreditCardAccountObj($dataService) {
 
     // Create Expense Account
     $creditCardAccountRequestObj = Account::create([
-        "AccountType" => 'Bank',
-        "AccountSubType" => 'Bank',
+        "AccountType" => 'Credit Card',
         "Name" => "CreditCardAccount-" . getGUID()
     ]);
     $creditCardAccountResponseObj = $dataService->Add($creditCardAccountRequestObj);

@@ -11,6 +11,12 @@ use QuickBooksOnline\API\Facades\Account;
 //For example, if you need to use Customer, add
 //use QuickBooksOnline\API\Facades\Customer;
 
+const INCOME_ACCOUNT_TYPE = "Income";
+const INCOME_ACCOUNT_SUBTYPE = "SalesOfProductIncome";
+const EXPENSE_ACCOUNT_TYPE = "Cost of Goods Sold";
+const EXPENSE_ACCOUNT_SUBTYPE = "SuppliesMaterialsCogs";
+const ASSET_ACCOUNT_TYPE = "Other Current Asset";
+const ASSET_ACCOUNT_SUBTYPE = "Inventory";
 
 session_start();
 
@@ -66,11 +72,11 @@ function landingTheJob()
      * Update Amount in the Estimate
      */
     $estimateId = $estimateCreateResponseObj->Id;
-    $estimate = $this->dataService->FindbyId('estimate', $estimateId);
+    $estimate = $dataService->FindbyId('estimate', $estimateId);
     $estimateUpdateRequestObj = Estimate::update($estimate , [
         "TotalAmt" => 200
     ]);
-    $estimateUpdateResponseObj = $this->dataService->Update($estimateUpdateRequestObj);
+    $estimateUpdateResponseObj = $dataService->Update($estimateUpdateRequestObj);
     print_r($estimateUpdateResponseObj);
 
     /*
@@ -78,7 +84,7 @@ function landingTheJob()
      */
 
     $theInvoiceRequestObj = Invoice::create([
-        "CustomerRef"=> $estimateUpdateResponseObj->CustomRef,
+        "CustomerRef"=> $estimateUpdateResponseObj->CustomerRef,
         "LinkedTxn"=> [
             "TxnId"=> $estimateId,
             "TxnType"=> "Estimate"
@@ -86,25 +92,25 @@ function landingTheJob()
         "TotalAmt" => 100.00,
         "Line" => $estimate->Line
     ]);
-    $resultingInvoiceResponseObj = $this->dataService->Add($theInvoiceRequestObj);
+    $resultingInvoiceResponseObj = $dataService->Add($theInvoiceRequestObj);
     print_r($resultingInvoiceResponseObj);
 
     /*
      * Update Invoice to add 5$ Discount
      */
-
+    $lines = $resultingInvoiceResponseObj->Line;
+    $lines[] = [
+        "Amount" => 5,
+        "DetailType" => "DiscountLineDetail",
+        "DiscountLineDetail" => [
+            "PercentBased" => false,
+        ],
+    ];
     $theInvoiceResourceObj = Invoice::update($resultingInvoiceResponseObj, [
-        "Line" => [
-            [
-                "Amount" => 5,
-                "DetailType" => "DiscountLineDetail",
-                "DiscountLineDetail" => [
-                    "PercentBased" => false,
-                ]
-            ]
-        ]
+        "CustomerRef"=> $estimateUpdateResponseObj->CustomerRef,
+        "Line" => $lines,
     ]);
-    $theInvoiceResponseObj = $this->dataService->Update($theInvoiceResourceObj);
+    $theInvoiceResponseObj = $dataService->Update($theInvoiceResourceObj);
     print_r($theInvoiceResponseObj);
 
 }
@@ -150,7 +156,7 @@ function getEstimateCreateRequestObj($dataService) {
         ],
         "CustomerRef" => [
             "value" => $customerRef->Id,
-            "name"=> $customerRef->Name
+            "name"=> $customerRef->FullyQualifiedName
         ],
         "CustomerMemo" => [
             "value" => "Thank you for your business and have a great day!"

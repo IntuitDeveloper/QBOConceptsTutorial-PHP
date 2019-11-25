@@ -21,7 +21,8 @@ use QuickBooksOnline\API\Facades\VendorCredit;
 use QuickBooksOnline\API\Facades\Account;
 use QuickBooksOnline\API\Facades\Customer;
 
-
+const EXPENSE_ACCOUNT_TYPE = "Cost of Goods Sold";
+const EXPENSE_ACCOUNT_SUBTYPE = "SuppliesMaterialsCogs";
 
 session_start();
 
@@ -156,16 +157,16 @@ function payBill()
                     [
                         "CustomerRef" =>
                             [
-                                "value" =>$customerRef->Id
+                                "value" => $customerRef->Id
                             ],
                         "AccountRef" =>
                             [
-                                "value" =>$bankaccountRef->Id
+                                "value" => $accountExpenseRef->Id
                             ],
                         "BillableStatus" => "Billable",
                         "TaxCodeRef" =>
                             [
-                                "value" =>"TAX"
+                                "value" => "TAX"
                             ]
                     ]
             ]
@@ -235,7 +236,7 @@ function getExpenseAccountObj($dataService) {
  */
 function getBankAccountObj($dataService) {
 
-    $accountArray = $dataService->Query("select * from Account where AccountType='" . 'Bank' . "' and AccountSubType='" . 'Bank' . "'");
+    $accountArray = $dataService->Query("select * from Account where AccountType='" . 'Bank' . "' and AccountSubType='" . 'Checking' . "'");
     $error = $dataService->getLastError();
     if ($error) {
         logError($error);
@@ -249,7 +250,7 @@ function getBankAccountObj($dataService) {
     // Create Expense Account
     $bankAccountRequestObj = Account::create([
         "AccountType" => 'Bank',
-        "AccountSubType" => 'Bank',
+        "AccountSubType" => 'Checking',
         "Name" => "BankAccount-" . getGUID()
     ]);
     $bankAccountObj = $dataService->Add($bankAccountRequestObj);
@@ -281,7 +282,7 @@ function getCustomerObj($dataService) {
 
     // Create Customer
     $customerRequestObj = Customer::create([
-        "DisplayName" => $customerName . getGUID()
+        "DisplayName" => $customerName
     ]);
     $customerResponseObj = $dataService->Add($customerRequestObj);
     $error = $dataService->getLastError();
@@ -311,15 +312,15 @@ function getVendorObj($dataService) {
     }
 
     // Create Customer
-    $vendorRequestObj = Customer::create([
-        "DisplayName" => $vendorName . getGUID()
+    $vendorRequestObj = Vendor::create([
+        "DisplayName" => $vendorName
     ]);
     $vendorResponseObj = $dataService->Add($vendorRequestObj);
     $error = $dataService->getLastError();
     if ($error) {
         logError($error);
     } else {
-        echo "Created Customer with Id={$vendorResponseObj->Id}.\n\n";
+        echo "Created Vendor with Id={$vendorResponseObj->Id}.\n\n";
         return $vendorResponseObj;
     }
 }
