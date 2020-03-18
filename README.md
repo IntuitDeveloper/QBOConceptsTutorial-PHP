@@ -45,7 +45,7 @@ Edit the `config.php` file to add your:
 * **clientSecret:** You can find your `clientSecret` from the `Keys` tab under your `App` 
 * **redirectUri:** The `redirectUri` for your app ( **OAuth2.0** )
 
-In the [Developer Portal](http://developer.intuit.com/), ensure the redirect URI in your `config.json` file has been entered in your app configuration. By default, the URL is set to the following for this demo:
+In the [Developer Portal](http://developer.intuit.com/), ensure the redirect URI in your `config.php` file has been entered in your app configuration. By default, the URL is set to the following for this demo:
 
 `http://localhost:3000/callback`
 
