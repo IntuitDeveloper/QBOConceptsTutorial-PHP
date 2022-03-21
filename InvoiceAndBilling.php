@@ -183,7 +183,7 @@ function getItemObj($dataService) {
         }
     }
 
-    // Fetch IncomeAccount, ExoenseAccount and AssetAccount Refs needed to create an Item
+    // Fetch IncomeAccount, ExpenseAccount and AssetAccount Refs needed to create an Item
     $incomeAccount = getIncomeAccountObj($dataService);
     $expenseAccount = getExpenseAccountObj($dataService);
     $assetAccount = getAssetAccountObj($dataService);
